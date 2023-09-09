@@ -64,6 +64,11 @@ function GamePicker() {
         ) : (
           // If no game is selected, show a list of games to choose from
           <div className="min-h-screen mb-8">
+            <img
+              src={`${IMG_PATH}pokemon/0258_000_mf_n.png`}
+              alt="mudkip"
+              className="absolute top-0 left-0 hidden xl:block transition-opacity duration-500 ease-in-out opacity-0 hover:opacity-100"
+            />
             <div className="flex justify-center items-center mb-8 mt-8">
               <h1 className="font-bold text-xl">Select a Game</h1>
             </div>
