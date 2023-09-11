@@ -5,8 +5,6 @@ import TeamBuilder from "./TeamBuilder"; // Import the TeamBuilder component
 
 function GamePicker() {
   const [currentGame, setCurrentGame] = useState(null);
-  const [currentVersions, setCurrentVersions] = useState([]);
-  const [slugs, setSlugs] = useState([]);
 
   const getScriptParent = () => {
     const src = import.meta.url;
@@ -39,13 +37,8 @@ function GamePicker() {
         if (slugs[0] in gameData) {
           const game = slugs[0];
           if (!gameData[game].disabled) {
-            const versions = gameData[game].versions
-              ? gameData[game].versions.map((ver) => ver.slug)
-              : [];
             slugs = slugs.slice(1); // Remove hash
             setCurrentGame(game);
-            setCurrentVersions(versions);
-            setSlugs(slugs);
           }
         }
       }
@@ -60,7 +53,9 @@ function GamePicker() {
       <article className="team-planner">
         {currentGame ? (
           // If a game is selected, render the TeamBuilder component
-          <TeamBuilder gameSlug={currentGame} />
+          <div>
+            <TeamBuilder gameSlug={currentGame} />
+          </div>
         ) : (
           // If no game is selected, show a list of games to choose from
           <div className="min-h-screen mb-8">
