@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import gameData from "./data/games.jsx";
 import typeData from "./data/types.jsx";
@@ -8,7 +8,22 @@ import versionData from "./data/versions.jsx";
 
 function TeamBuilder() {
   const { gameSlug } = useParams();
-  const [teamSlots, setTeamSlots] = useState(Array(6).fill(null));
+  const [hashSlugs, setHashSlugs] = useState([]);
+
+  useEffect(() => {
+    // Helper function to parse the URL and set state variables
+    const parseUrl = () => {
+      if (
+        window.location.pathname.split("/").includes("plan") &&
+        window.location.hash
+      ) {
+        let slugs = window.location.hash.substring(1).split("+");
+        setHashSlugs(slugs);
+      }
+    };
+    // Parse the URL and attach scroll listener on component mount
+    parseUrl();
+  }, []);
 
   const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -146,12 +161,57 @@ function TeamBuilder() {
   const JS_PATH = getScriptParent();
   const IMG_PATH = JS_PATH + "assets/";
 
+  const analyzeTeam = (element, button) => {
+    const selector = "type-analysis_hidden";
+    if (element.classList.contains(selector)) {
+      button.innerHTML = "Hide Team Analysis";
+      element.classList.remove(selector);
+    } else {
+      button.innerHTML = "Show Team Analysis";
+      element.classList.add(selector);
+    }
+  };
+
+  const toggleEmptyDex = () => {
+    document.querySelectorAll(".picker__pokedex").forEach((ol) => {
+      if (
+        ol.children.length ===
+        ol.querySelectorAll(":where(.pokedex-entry_picked)").length
+      ) {
+        ol.parentNode.classList.add("picker__pokedex-container_hidden");
+      } else {
+        ol.parentNode.classList.remove("picker__pokedex-container_hidden");
+      }
+    });
+  };
+
+  const getCurrentUrl = () => {
+    const url = window.location.href;
+    const i = url.indexOf(window.location.hash) || url.length;
+    return url.substring(0, i);
+  };
+
+  const updateTeamHash = () => {
+    const slugs = [gameSlug];
+    document.querySelectorAll(".slot_populated").forEach((li) => {
+      slugs.push(li.dataset.slug);
+    });
+    const hash = slugs.join("+");
+    if (window.history.replaceState) {
+      const url = getCurrentUrl() + "#" + hash;
+      window.history.replaceState(url, "", url);
+    } else {
+      window.location.hash = hash;
+    }
+  };
+
   // Function to clear a team slot
   const clearTeamSlot = (event_or_slug) => {
     const slot =
       typeof event_or_slug === "string"
         ? document.querySelector(".slot[data-slug='" + slug + "']")
-        : event_or_slug.currentTarget.parentNode;
+        : event_or_slug.currentTarget;
+    // event_or_slug.currentTarget.parentNode;
 
     const slug = slot.dataset.slug;
     if (slug === "") return;
@@ -195,7 +255,106 @@ function TeamBuilder() {
       span.setAttribute("class", "slot__type");
       span.innerHTML = "";
     });
+    slot.parentNode.append(slot);
+    const li = document.querySelector(
+      ".pokedex-entry[data-slug='" + slug + "']"
+    );
+    if (li) {
+      li.classList.remove("pokedex-entry_picked");
+      toggleEmptyDex();
+    }
+
+    updateTeamAnalysis();
+    updateTeamHash();
   };
+
+  const getPokemonRenderUrl = (pokemon, gmax = false) => {
+    return (
+      BASE_IMG +
+      [
+        String(pokemon.base_id).padStart(4, "0"),
+        String(pokemon.form_id).padStart(3, "0"),
+        gmax && pokemon.gender.length > 1 ? "mf" : pokemon.gender[0],
+        gmax ? "g" : "n",
+      ].join("_") +
+      ".png"
+    );
+  };
+
+  const populateTeamSlot = (event_or_slug) => {
+    const slug =
+      typeof event_or_slug === "string"
+        ? event_or_slug
+        : event_or_slug.currentTarget.parentNode.dataset.slug;
+
+    // Validate Pokémon exists in database
+    if (!(slug in pokemonData)) {
+      return;
+    }
+
+    // Validate Pokémon is not duplicated
+    const slugs = Array.from(document.querySelectorAll(".slot_populated")).map(
+      (li) => li.dataset.slug
+    );
+    if (slugs.includes(slug)) {
+      return;
+    }
+
+    const slot = document.querySelector(".slot_empty");
+    var gmax = slug.endsWith("-gmax");
+
+    const pokemon =
+      pokemonData[gmax ? slug.substring(0, slug.length - 5) : slug];
+    const type = getPokemonType(pokemon);
+    slot.dataset.type = type;
+    slot.classList.add("slot_populated");
+    slot.classList.remove("slot_empty", "slot_hover");
+    slot.dataset.slug = slug;
+    slot.dataset.tera = "";
+
+    slot
+      .querySelector(".slot__bg-type-1")
+      .classList.add("slot__bg-type-1_" + type[0]);
+    slot
+      .querySelector(".slot__bg-type-2")
+      .classList.add("slot__bg-type-2_" + type.slice(-1));
+    slot.querySelector(".slot__info").classList.add("slot__info_" + type[0]);
+
+    const img = slot.querySelector(".slot__pokemon-render");
+    if (gmax) img.classList.add("slot__pokemon-render_gmax");
+    img.setAttribute("src", getPokemonRenderUrl(pokemon, gmax));
+    img.setAttribute("alt", pokemon.name);
+
+    slot.querySelector(".slot__name").innerHTML = pokemon.name;
+
+    const form = gmax ? "Gigantamax" : pokemon.form_name;
+    var span = slot.querySelector(".slot__form");
+    if (form) {
+      span.innerHTML = form;
+      span.classList.remove("slot__form_none");
+    } else {
+      span.classList.add("slot__form_none");
+    }
+
+    span = slot.querySelectorAll(".slot__type");
+    span.forEach((span, i) => {
+      span.classList.add("slot__type_" + type[i]);
+      span.innerHTML = type[i] ? capitalize(type[i]) : "";
+    });
+
+    const li = document.querySelector(
+      ".pokedex-entry[data-slug='" + slug + "']"
+    );
+    if (li) {
+      li.classList.add("pokedex-entry_picked");
+      toggleEmptyDex();
+    }
+
+    updateTeamAnalysis();
+    updateTeamHash();
+  };
+
+  hashSlugs.forEach((slug) => populateTeamSlot(slug));
 
   const BASE_IMG = IMG_PATH + "pokemon/";
   const SV_BASE_IMG = IMG_PATH + "sv-pokemon/";
@@ -276,13 +435,28 @@ function TeamBuilder() {
                 </li>
               ))}
             </ul>
+            <div className="team__type-analysis type-analysis_hidden flex flex-col gap-4 justify-stretch items-center bg-white border border-gray-300 rounded p-4">
+              <h3 className="type-analysis__heading">Team Defense</h3>
+              <ol className="grid gap-4 grid-cols-6 justify-evenly list-none m-0 p-0 type-analysis__grid type-analysis__grid_defense">
+                {tallies}
+              </ol>
+              <h3 className="type-analysis__heading">Team Coverage</h3>
+              <ol className="grid gap-4 grid-cols-6 justify-evenly list-none m-0 p-0 type-analysis__grid type-analysis__grid_attack">
+                {tallies}
+              </ol>
+            </div>
             <div className="team__buttons">
-              <div className="flex justify-center items-center">
-                <h3 className="type-analysis__heading">Team Defense</h3>
-              </div>
-              <div className="team__type-analysis type-analysis_hidden">
-                <ol className="flex justify-center items-center">{tallies}</ol>
-              </div>
+              <button
+                className="team__button"
+                onClick={() =>
+                  analyzeTeam(
+                    document.querySelector(".team__type-analysis"),
+                    document.querySelector(".team__button")
+                  )
+                }
+              >
+                Show Team Analysis
+              </button>
             </div>
           </section>
         </div>
