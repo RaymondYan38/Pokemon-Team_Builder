@@ -18,3 +18,24 @@
     transform: translateX(5px);
   }
 }
+
+/* Add this CSS code to your stylesheet or component */
+.pokedex-entry-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr); /* 8 columns in a row */
+  gap: 8px; /* Adjust the gap as needed */
+  max-width: 100%; /* Ensure it doesn't overflow its container */
+  justify-items: center; /* Center align the content */
+  margin-bottom: 20px; /* Add margin to separate it from other content */
+}
+
+.pokedex-entry-grid .pokedex-entry {
+  width: 100%; /* Make each entry take the full width of its cell */
+  text-align: center; /* Center-align text */
+}
+
+/* You can further adjust the image size if needed */
+.pokedex-entry-grid .pokedex-entry img {
+  max-width: 100%; /* Resize images to fit the cell width */
+  height: auto; /* Maintain aspect ratio */
+}

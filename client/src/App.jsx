@@ -7,7 +7,7 @@ function App() {
     <Router>
       <Routes>
         <Route exact path="/" element={<GamePicker />} />
-        <Route path="/plan/:gameSlug" element={<TeamBuilder />} />
+        <Route path="/plan/:providedGameSlug" element={<TeamBuilder />} />
       </Routes>
     </Router>
   );

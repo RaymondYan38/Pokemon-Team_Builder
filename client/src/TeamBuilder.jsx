@@ -5,22 +5,41 @@ import typeData from "./data/types.jsx";
 import pokemonData from "./data/pokemon.jsx";
 import dexData from "./data/pokedexes.jsx";
 import versionData from "./data/versions.jsx";
+import "../styles.css";
 
-function TeamBuilder() {
-  const { gameSlug } = useParams();
+const getScriptParent = () => {
+  const src = import.meta.url;
+  return src.substring(0, src.lastIndexOf("/") + 1);
+};
+
+const JS_PATH = getScriptParent();
+const IMG_PATH = JS_PATH + "assets/";
+const BASE_IMG = IMG_PATH + "pokemon/";
+const SV_BASE_IMG = IMG_PATH + "sv-pokemon/";
+const UNKNOWN_IMG = IMG_PATH + "type_unknown.png";
+const UNKNOWN_NAME = "???";
+
+const TeamBuilder = () => {
+  const { providedGameSlug } = useParams();
+  const gameSlug = providedGameSlug.includes("+")
+    ? providedGameSlug.split("+")[0]
+    : providedGameSlug;
+
   const [hashSlugs, setHashSlugs] = useState([]);
 
   useEffect(() => {
     // Helper function to parse the URL and set state variables
     const parseUrl = () => {
       if (
-        window.location.pathname.split("/").includes("plan") &&
-        window.location.hash
+        window.location.hash &&
+        window.location.hash.split("/").includes("plan")
       ) {
         let slugs = window.location.hash.substring(1).split("+");
         setHashSlugs(slugs);
       }
     };
+    console.log(hashSlugs);
+    populateDexes();
     // Parse the URL and attach scroll listener on component mount
     parseUrl();
   }, []);
@@ -153,14 +172,6 @@ function TeamBuilder() {
     );
   });
 
-  const getScriptParent = () => {
-    const src = import.meta.url;
-    return src.substring(0, src.lastIndexOf("/") + 1);
-  };
-
-  const JS_PATH = getScriptParent();
-  const IMG_PATH = JS_PATH + "assets/";
-
   const analyzeTeam = (element, button) => {
     const selector = "type-analysis_hidden";
     if (element.classList.contains(selector)) {
@@ -192,18 +203,21 @@ function TeamBuilder() {
   };
 
   const updateTeamHash = () => {
-    const slugs = [gameSlug];
+    const slugs = ["plan", gameSlug]; // "plan" is added as a fixed part
     document.querySelectorAll(".slot_populated").forEach((li) => {
-      slugs.push(li.dataset.slug);
+      slugs.push(li.dataset.slug.replace(/\s/g, "+"));
     });
+
     const hash = slugs.join("+");
     if (window.history.replaceState) {
-      const url = getCurrentUrl() + "#" + hash;
+      const url = getCurrentUrl() + "#/" + hash;
       window.history.replaceState(url, "", url);
     } else {
       window.location.hash = hash;
     }
   };
+
+  const updateTeamAnalysis = () => {};
 
   // Function to clear a team slot
   const clearTeamSlot = (event_or_slug) => {
@@ -354,35 +368,211 @@ function TeamBuilder() {
     updateTeamHash();
   };
 
-  hashSlugs.forEach((slug) => populateTeamSlot(slug));
+  const populateDexes = () => {
+    const container = document.querySelector(".team-planner");
+    const tail = document.createElement("div");
+    tail.classList.add("tail");
+    const section = document.createElement("section");
+    const ol = document.createElement("ol");
+    container.append(tail);
+    tail.append(section);
+    section.append(ol);
+    tail.classList.add("flex", "justify-center", "items-center");
+    const game = gameData[gameSlug];
+    game.dex_slugs.forEach((slug, i) => {
+      let li = document.createElement("li");
+      let heading = document.createElement("h3");
+      let pokedex = document.createElement("ol");
+      pokedex.classList.add("grid", "grid-cols-12", "gap-4");
+      li.classList.add("picker__pokedex-container");
 
-  const BASE_IMG = IMG_PATH + "pokemon/";
-  const SV_BASE_IMG = IMG_PATH + "sv-pokemon/";
-  const UNKNOWN_IMG = IMG_PATH + "type_unknown.png";
-  const UNKNOWN_NAME = "???";
+      ol.append(li);
+      li.append(heading);
+      heading.innerHTML = dexData[slug].name;
+      heading.classList.add("picker__pokedex-name");
+      li.append(pokedex);
+      pokedex.id = slug;
+      pokedex.classList.add("picker__pokedex");
+
+      populateDex(pokedex, dexData[slug]);
+    });
+  };
+
+  const sortIds = (a, b) => a[0] - b[0] || a[1] - b[1];
+
+  const populateDex = (ol, dexEntry) => {
+    ol.classList.add("pokedex-entry-grid");
+    const order = Object.keys(dexEntry.order).sort((a, b) => a - b);
+    const entries = Object.entries(pokemonData);
+    order.forEach((num) => {
+      const ids = dexEntry.order[num].sort(sortIds);
+      ids.forEach((id) => {
+        const [base_id, form_id] = id;
+        const [slug, pokemon] = entries.find(
+          (tup) => tup[1].base_id === base_id && tup[1].form_id === form_id
+        );
+        createPokemonEntry(slug, pokemon).forEach((li) => {
+          ol.append(li);
+        });
+      });
+    });
+  };
+
+  const createPokemonEntry = (slug, pokemon) => {
+    const img = document.createElement("img");
+    const button = document.createElement("button");
+    const li = document.createElement("li");
+
+    li.append(button);
+    button.append(img);
+
+    // Create a new div for the Pokémon's details
+    const detailsDiv = document.createElement("div");
+
+    // Create an element for the Pokémon's name
+    const nameElement = document.createElement("p");
+    nameElement.textContent = pokemon.name;
+
+    // Create an element for the Pokémon's typing
+    const typingElement = document.createElement("p");
+
+    pokemon.pokemon_type.forEach((type, index) => {
+      const typeElement = document.createElement("span");
+      typeElement.textContent = type;
+      switch (type) {
+        case "grass":
+          typeElement.classList.add("text-[#7AC74C]");
+          break;
+        case "normal":
+          typeElement.classList.add("text-[#A8A77A]");
+          break;
+        case "water":
+          typeElement.classList.add("text-[#6390F0]");
+          break;
+        case "fire":
+          typeElement.classList.add("text-[#EE8130]");
+          break;
+        case "electric":
+          typeElement.classList.add("text-[#F7D02C]");
+          break;
+        case "ice":
+          typeElement.classList.add("text-[#96D9D6]");
+          break;
+        case "fighting":
+          typeElement.classList.add("text-[#C22E28]");
+          break;
+        case "poison":
+          typeElement.classList.add("text-[#A33EA1]");
+          break;
+        case "ground":
+          typeElement.classList.add("text-[#E2BF65]");
+          break;
+        case "flying":
+          typeElement.classList.add("text-[#A98FF3]");
+          break;
+        case "psychic":
+          typeElement.classList.add("text-[#F95587]");
+          break;
+        case "bug":
+          typeElement.classList.add("text-[#A6B91A]");
+          break;
+        case "rock":
+          typeElement.classList.add("text-[#B6A136]");
+          break;
+        case "ghost":
+          typeElement.classList.add("text-[#735797]");
+          break;
+        case "dragon":
+          typeElement.classList.add("text-[#6F35FC]");
+          break;
+        case "dark":
+          typeElement.classList.add("text-[#705746]");
+          break;
+        case "steel":
+          typeElement.classList.add("text-[#B7B7CE]");
+          break;
+        case "fairy":
+          typeElement.classList.add("text-[#D685AD]");
+          break;
+        default:
+          // Default text color if type is not recognized
+          typeElement.classList.add("text-black");
+          break;
+      }
+      if (index < pokemon.pokemon_type.length - 1) {
+        typingElement.appendChild(typeElement);
+        typingElement.appendChild(document.createTextNode(" ")); // Add a space
+      } else {
+        typingElement.appendChild(typeElement);
+      }
+    });
+
+    // Append the details to the div
+    detailsDiv.append(nameElement, typingElement);
+
+    // Append the details div to the li
+    li.append(detailsDiv);
+
+    button.addEventListener("click", populateTeamSlot);
+    button.classList.add("pokedex-entry__button");
+
+    li.dataset.slug = slug;
+    li.dataset.id = pokemon.base_id;
+    li.dataset.formId = pokemon.form_id;
+    li.setAttribute("title", pokemon.name);
+    li.classList.add("pokedex-entry");
+
+    img.setAttribute("alt", pokemon.name);
+    img.setAttribute("src", getPokemonRenderUrl(pokemon));
+    img.setAttribute("loading", "lazy");
+    img.classList.add("pokedex-entry__thumb");
+
+    // If Pokémon can Gigantamax, duplicate its entry
+    if (
+      gameData[gameSlug].gmax &&
+      pokemon.has_gigantamax &&
+      !pokemon.is_cosmetic
+    ) {
+      const clone = li.cloneNode(true);
+      clone.dataset.slug = slug + "-gmax";
+      clone.querySelector("button").addEventListener("click", populateTeamSlot);
+      clone
+        .querySelector("img")
+        .setAttribute("src", getPokemonRenderUrl(pokemon, true));
+
+      // Clone and append the details div to the clone
+      const clonedDetailsDiv = detailsDiv.cloneNode(true);
+      clone.append(clonedDetailsDiv);
+
+      return [li, clone];
+    }
+    return [li];
+  };
+
+  hashSlugs.forEach((slug) => populateTeamSlot(slug));
 
   return (
     <div>
-      <div className="head">
-        <header className="head__header">
-          <h1 className="head__heading">
-            <img
-              alt={gameSlug}
-              src={`${IMG_PATH}game/${gameSlug}.png`}
-              className=" mx-auto max-w-full max-h-full transform scale-130"
-            />
-            <a href="../">
-              <span className="head__game-name">Pokémon</span> Team Planner
-            </a>
-          </h1>
-          <p>
-            Use this tool to plan your team for an in-game run. Click on a
-            Pokémon below to add it to your team, and click on it again to
-            remove it. Have fun and share with your friends and neighbors!
-          </p>
-        </header>
-      </div>
       <article className="team-planner">
+        <div className="head">
+          <header className="head__header">
+            <h1 className="head__heading">
+              <img
+                alt={gameSlug}
+                src={`${IMG_PATH}game/${gameSlug}.png`}
+                className=" mx-auto max-w-full max-h-full transform scale-130"
+              />
+              <a href="../">
+                <span className="head__game-name">Pokémon</span> Team Planner
+              </a>
+            </h1>
+            <p>
+              Use this tool to plan your team for an in-game run. Click on a
+              Pokémon below to add it to your team, and click on it again to
+              remove it. Have fun and share with your friends and neighbors!
+            </p>
+          </header>
+        </div>
         <div className="head__team">
           <section className="team">
             <h2 className="team__heading">Your Team</h2>
@@ -463,6 +653,6 @@ function TeamBuilder() {
       </article>
     </div>
   );
-}
+};
 
 export default TeamBuilder;

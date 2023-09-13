@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import gameData from "./data/games.jsx";
-import { Link } from "react-router-dom"; // Import Link for navigation
+import { Link, useNavigate } from "react-router-dom"; // Import Link for navigation
 import TeamBuilder from "./TeamBuilder"; // Import the TeamBuilder component
 
 function GamePicker() {
   const [currentGame, setCurrentGame] = useState(null);
-
   const getScriptParent = () => {
     const src = import.meta.url;
     return src.substring(0, src.lastIndexOf("/") + 1);
@@ -48,14 +47,21 @@ function GamePicker() {
     parseUrl();
   }, []);
 
+  // const navigate = useNavigate();
+
+  // const selectGame = (slug) => {
+  //   navigate(`/plan/${slug}`);
+  // };
+
   return (
     <div className="bg-gray-200 flex justify-center items-center min-h-screen overflow-y-auto">
       <article className="team-planner">
-        {currentGame ? (
+        {/* {currentGame ? (
           // If a game is selected, render the TeamBuilder component
-          <div>
-            <TeamBuilder gameSlug={currentGame} />
-          </div>
+          // <div>
+          //   <TeamBuilder providedGameSlug={currentGame} />
+          // </div>
+          selectGame(currentGame)
         ) : (
           // If no game is selected, show a list of games to choose from
           <div className="min-h-screen mb-8">
@@ -83,7 +89,32 @@ function GamePicker() {
               ))}
             </ul>
           </div>
-        )}
+        )} */}
+        <div className="min-h-screen mb-8">
+          <img
+            src={`${IMG_PATH}pokemon/0258_000_mf_n.png`}
+            alt="mudkip"
+            className="absolute top-0 left-0 hidden xl:block transition-opacity duration-500 ease-in-out opacity-0 hover:opacity-100"
+          />
+          <div className="flex justify-center items-center mb-8 mt-8">
+            <h1 className="font-bold text-xl">Select a Game</h1>
+          </div>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-16">
+            {Object.entries(gameData).map(([slug, game]) => (
+              <li key={slug}>
+                <Link to={`/plan/${slug}`} title={getGameName(game)}>
+                  <div className="bg-white w-64 h-32 rounded-lg border border-gray-400 p-4">
+                    <img
+                      alt={getGameName(game)}
+                      src={`${IMG_PATH}game/${slug}.png`}
+                      className=" mx-auto max-w-full max-h-full transform scale-130"
+                    />
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       </article>
     </div>
   );
