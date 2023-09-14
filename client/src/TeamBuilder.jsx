@@ -175,21 +175,19 @@ const TeamBuilder = () => {
     const selector = "type-analysis_hidden";
     if (element.classList.contains(selector)) {
       button.innerHTML = "Hide Team Analysis";
-      element.classList.remove(selector);
+      element.classList.remove(selector, "hidden");
     } else {
       button.innerHTML = "Show Team Analysis";
-      element.classList.add(selector);
+      element.classList.add(selector, "hidden");
     }
   };
 
   const toggleEmptyDex = () => {
     document.querySelectorAll(".picker__pokedex").forEach((ol) => {
-      console.log(ol);
       if (
         ol.children.length ===
         ol.querySelectorAll(":where(.pokedex-entry_picked)").length
       ) {
-        console.log("IN HERE");
         ol.parentNode.classList.add("picker__pokedex-container_hidden");
       } else {
         ol.parentNode.classList.remove("picker__pokedex-container_hidden");
@@ -219,24 +217,41 @@ const TeamBuilder = () => {
   };
 
   const updateTeamAnalysis = () => {
-    const typeData = getCurrentTypeData();
     // Fetch current Pokémon slugs
     const slots = document.querySelectorAll(".slot_populated");
     const slugs = Array.from(slots).map((li) => li.dataset.slug);
     // Update team defense and offense
     const defTallies = document.querySelector(".type-analysis__grid_defense");
     const atkTallies = document.querySelector(".type-analysis__grid_attack");
+
     Object.keys(getCurrentTypeData()).forEach((type) => {
+      // console.log(type);
       const weakPokemon = [],
         resistPokemon = [],
         coveragePokemon = [];
       // Update counts per type (resistances includes immunities)
       for (let i = 0; i < slugs.length; i++) {
         let slug = slugs[i];
-        if (slug.endsWith("-gmax")) slug = slug.substring(0, slug.length - 5);
-        // If no tera type, use Pokémon data
-        // If tera type, use type data
+        if (slug.endsWith("-gmax")) {
+          slug = slug.substring(0, slug.length - 5);
+        }
+
+        if (pokemonData[slug]["weaknesses"].includes(type)) {
+          weakPokemon.push(slugs[i]);
+        } else if (
+          pokemonData[slug]["resistances"].includes(type) ||
+          pokemonData[slug]["immunities"].includes(type)
+        ) {
+          resistPokemon.push(slugs[i]);
+        }
+        if (pokemonData[slug]["coverage"].includes(type)) {
+          coveragePokemon.push(slugs[i]);
+        }
       }
+      // console.log(type);
+      // console.log(weakPokemon);
+      // console.log(resistPokemon);
+      // console.log(coveragePokemon);
       const defCount = resistPokemon.length - weakPokemon.length;
       const atkCount = coveragePokemon.length;
       const selector = ".tally_" + type;
@@ -250,9 +265,15 @@ const TeamBuilder = () => {
       } else {
         atkTallies.querySelector(selector).classList.remove("tally_warning");
       }
+      // console.log(resistPokemon.length);
+      // console.log(weakPokemon.length);
+      // console.log(coveragePokemon.length);
+
       defTallies
         .querySelectorAll(selector + " .tally__mark")
         .forEach((element) => {
+          console.log(selector + " .tally__mark");
+          console.log(element);
           element.setAttribute("class", "tally__mark");
           if (weakPokemon.length > 0) {
             element.dataset.slug = weakPokemon.shift();
@@ -294,7 +315,6 @@ const TeamBuilder = () => {
     const slug = slot.dataset.slug;
 
     if (slug === "") return;
-    console.log("slug: " + slug);
     const type = slot.dataset.type.split(",");
     const tera = slot.dataset.tera;
 
@@ -753,10 +773,8 @@ const TeamBuilder = () => {
                     const liNode =
                       event.target.parentNode.parentNode.parentNode;
                     const classNames = liNode.className;
-                    console.log(event.target);
                     // Check if the class name contains "slot_empty"
                     if (!classNames.includes("slot_empty")) {
-                      console.log("in here");
                       event.target.classList.add("animate-shake");
                     }
                   }}
@@ -773,7 +791,7 @@ const TeamBuilder = () => {
                       />
                     </figure>
                   </div>
-                  <div className="slot__info bg-emerald-500 border border-black rounded">
+                  <div className="slot__info bg-orange-100 border border-black rounded">
                     <div className="flex justify-center items-center slot__name-container">
                       <span className="slot__name">{UNKNOWN_NAME}</span>
                       <span className="slot__form slot__form_none"></span>
@@ -789,12 +807,12 @@ const TeamBuilder = () => {
                 </li>
               ))}
             </ul>
-            <div className="team__type-analysis type-analysis_hidden flex flex-col gap-4 justify-stretch items-center bg-white border border-gray-300 rounded p-4">
+            <div className="team__type-analysis type-analysis_hidden hidden flex flex-col gap-4 justify-stretch items-center bg-white border border-gray-300 rounded p-4">
               <h3 className="type-analysis__heading">Team Defense</h3>
               <ol className="grid gap-4 grid-cols-6 justify-evenly list-none m-0 p-0 type-analysis__grid type-analysis__grid_defense">
                 {tallies}
               </ol>
-              <h3 className="type-analysis__heading">Team Coverage</h3>
+              <h3 className="type-analysis__heading">Team Offense</h3>
               <ol className="grid gap-4 grid-cols-6 justify-evenly list-none m-0 p-0 type-analysis__grid type-analysis__grid_attack">
                 {tallies}
               </ol>
