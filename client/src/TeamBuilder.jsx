@@ -38,7 +38,6 @@ const TeamBuilder = () => {
         setHashSlugs(slugs);
       }
     };
-    console.log(hashSlugs);
     populateDexes();
     // Parse the URL and attach scroll listener on component mount
     parseUrl();
@@ -185,10 +184,12 @@ const TeamBuilder = () => {
 
   const toggleEmptyDex = () => {
     document.querySelectorAll(".picker__pokedex").forEach((ol) => {
+      console.log(ol);
       if (
         ol.children.length ===
         ol.querySelectorAll(":where(.pokedex-entry_picked)").length
       ) {
+        console.log("IN HERE");
         ol.parentNode.classList.add("picker__pokedex-container_hidden");
       } else {
         ol.parentNode.classList.remove("picker__pokedex-container_hidden");
@@ -203,21 +204,84 @@ const TeamBuilder = () => {
   };
 
   const updateTeamHash = () => {
-    const slugs = ["plan", gameSlug]; // "plan" is added as a fixed part
+    const slugs = [gameSlug]; // "plan" is added as a fixed part
     document.querySelectorAll(".slot_populated").forEach((li) => {
       slugs.push(li.dataset.slug.replace(/\s/g, "+"));
     });
 
     const hash = slugs.join("+");
     if (window.history.replaceState) {
-      const url = getCurrentUrl() + "#/" + hash;
+      const url = getCurrentUrl() + "#/plan/" + hash;
       window.history.replaceState(url, "", url);
     } else {
       window.location.hash = hash;
     }
   };
 
-  const updateTeamAnalysis = () => {};
+  const updateTeamAnalysis = () => {
+    const typeData = getCurrentTypeData();
+    // Fetch current Pokémon slugs
+    const slots = document.querySelectorAll(".slot_populated");
+    const slugs = Array.from(slots).map((li) => li.dataset.slug);
+    // Update team defense and offense
+    const defTallies = document.querySelector(".type-analysis__grid_defense");
+    const atkTallies = document.querySelector(".type-analysis__grid_attack");
+    Object.keys(getCurrentTypeData()).forEach((type) => {
+      const weakPokemon = [],
+        resistPokemon = [],
+        coveragePokemon = [];
+      // Update counts per type (resistances includes immunities)
+      for (let i = 0; i < slugs.length; i++) {
+        let slug = slugs[i];
+        if (slug.endsWith("-gmax")) slug = slug.substring(0, slug.length - 5);
+        // If no tera type, use Pokémon data
+        // If tera type, use type data
+      }
+      const defCount = resistPokemon.length - weakPokemon.length;
+      const atkCount = coveragePokemon.length;
+      const selector = ".tally_" + type;
+      if (defCount < 0) {
+        defTallies.querySelector(selector).classList.add("tally_warning");
+      } else {
+        defTallies.querySelector(selector).classList.remove("tally_warning");
+      }
+      if (defCount + atkCount < 0) {
+        atkTallies.querySelector(selector).classList.add("tally_warning");
+      } else {
+        atkTallies.querySelector(selector).classList.remove("tally_warning");
+      }
+      defTallies
+        .querySelectorAll(selector + " .tally__mark")
+        .forEach((element) => {
+          element.setAttribute("class", "tally__mark");
+          if (weakPokemon.length > 0) {
+            element.dataset.slug = weakPokemon.shift();
+            element.classList.add("tally__mark_negative");
+            element.innerHTML = -1;
+          } else if (resistPokemon.length > 0) {
+            element.dataset.slug = resistPokemon.shift();
+            element.classList.add("tally__mark_positive");
+            element.innerHTML = 1;
+          } else {
+            element.dataset.slug = "";
+            element.innerHTML = 0;
+          }
+        });
+      atkTallies
+        .querySelectorAll(selector + " .tally__mark")
+        .forEach((element) => {
+          element.setAttribute("class", "tally__mark");
+          if (coveragePokemon.length > 0) {
+            element.dataset.slug = coveragePokemon.shift();
+            element.classList.add("tally__mark_positive");
+            element.innerHTML = 1;
+          } else {
+            element.dataset.slug = "";
+            element.innerHTML = 0;
+          }
+        });
+    });
+  };
 
   // Function to clear a team slot
   const clearTeamSlot = (event_or_slug) => {
@@ -228,14 +292,15 @@ const TeamBuilder = () => {
     // event_or_slug.currentTarget.parentNode;
 
     const slug = slot.dataset.slug;
-    if (slug === "") return;
 
+    if (slug === "") return;
+    console.log("slug: " + slug);
     const type = slot.dataset.type.split(",");
     const tera = slot.dataset.tera;
 
     // Empty data
     slot.classList.add("slot_empty");
-    slot.classList.remove("slot_hover", "slot_populated");
+    slot.classList.remove("slot_populated");
     slot.dataset.slug = "";
     slot.dataset.type = "";
     slot.dataset.tera = "";
@@ -322,7 +387,7 @@ const TeamBuilder = () => {
     const type = getPokemonType(pokemon);
     slot.dataset.type = type;
     slot.classList.add("slot_populated");
-    slot.classList.remove("slot_empty", "slot_hover");
+    slot.classList.remove("slot_empty");
     slot.dataset.slug = slug;
     slot.dataset.tera = "";
 
@@ -351,8 +416,71 @@ const TeamBuilder = () => {
     }
 
     span = slot.querySelectorAll(".slot__type");
+    // span.classList.add("rounded", "border", "border-black", "px-0.5");
     span.forEach((span, i) => {
+      switch (type[i]) {
+        case "grass":
+          span.classList.add("bg-[#7AC74C]");
+          break;
+        case "normal":
+          span.classList.add("bg-[#A8A77A]");
+          break;
+        case "water":
+          span.classList.add("bg-[#6390F0]");
+          break;
+        case "fire":
+          span.classList.add("bg-[#EE8130]");
+          break;
+        case "electric":
+          span.classList.add("bg-[#F7D02C]");
+          break;
+        case "ice":
+          span.classList.add("bg-[#96D9D6]");
+          break;
+        case "fighting":
+          span.classList.add("bg-[#C22E28]");
+          break;
+        case "poison":
+          span.classList.add("bg-[#A33EA1]");
+          break;
+        case "ground":
+          span.classList.add("bg-[#E2BF65]");
+          break;
+        case "flying":
+          span.classList.add("bg-[#A98FF3]");
+          break;
+        case "psychic":
+          span.classList.add("bg-[#F95587]");
+          break;
+        case "bug":
+          span.classList.add("bg-[#A6B91A]");
+          break;
+        case "rock":
+          span.classList.add("bg-[#B6A136]");
+          break;
+        case "ghost":
+          span.classList.add("bg-[#735797]");
+          break;
+        case "dragon":
+          span.classList.add("bg-[#6F35FC]");
+          break;
+        case "dark":
+          span.classList.add("bg-[#705746]");
+          break;
+        case "steel":
+          span.classList.add("bg-[#B7B7CE]");
+          break;
+        case "fairy":
+          span.classList.add("bg-[#D685AD]");
+          break;
+        default:
+          // Default text color if type is not recognized
+          break;
+      }
       span.classList.add("slot__type_" + type[i]);
+      if (typeof type[i] !== "undefined") {
+        span.classList.add("rounded", "border", "border-black", "px-0.5");
+      }
       span.innerHTML = type[i] ? capitalize(type[i]) : "";
     });
 
@@ -377,19 +505,41 @@ const TeamBuilder = () => {
     container.append(tail);
     tail.append(section);
     section.append(ol);
-    tail.classList.add("flex", "justify-center", "items-center");
+    tail.classList.add(
+      "flex",
+      "justify-center",
+      "items-center",
+      "border-t",
+      "border-gray-300",
+      "mt-8",
+      "p-8"
+    );
     const game = gameData[gameSlug];
     game.dex_slugs.forEach((slug, i) => {
       let li = document.createElement("li");
       let heading = document.createElement("h3");
       let pokedex = document.createElement("ol");
-      pokedex.classList.add("grid", "grid-cols-12", "gap-4");
-      li.classList.add("picker__pokedex-container");
+      pokedex.classList.add(
+        "grid",
+        "grid-cols-2",
+        "sm:grid-cols-3",
+        "md:grid-cols-5",
+        "lg:grid-cols-7",
+        "xl:grid-cols-9",
+        "gap-4"
+      );
+      li.classList.add(
+        "picker__pokedex-container",
+        "flex",
+        "flex-col",
+        "justify-center",
+        "items-center"
+      );
 
       ol.append(li);
       li.append(heading);
       heading.innerHTML = dexData[slug].name;
-      heading.classList.add("picker__pokedex-name");
+      heading.classList.add("picker__pokedex-name", "text-xl", "text-bold");
       li.append(pokedex);
       pokedex.id = slug;
       pokedex.classList.add("picker__pokedex");
@@ -430,73 +580,80 @@ const TeamBuilder = () => {
     const detailsDiv = document.createElement("div");
 
     // Create an element for the Pokémon's name
-    const nameElement = document.createElement("p");
-    nameElement.textContent = pokemon.name;
+    const nameElement = document.createElement("a");
+    nameElement.innerHTML = pokemon.name;
+    nameElement.href = `https://pokemondb.net/pokedex/${pokemon.name}`;
+    nameElement.classList.add(
+      "text-blue-500",
+      "hover:underline",
+      "cursor-pointer"
+    );
 
     // Create an element for the Pokémon's typing
     const typingElement = document.createElement("p");
 
     pokemon.pokemon_type.forEach((type, index) => {
       const typeElement = document.createElement("span");
+      typeElement.classList.add("rounded", "border", "border-black", "px-0.5");
       typeElement.textContent = type;
       switch (type) {
         case "grass":
-          typeElement.classList.add("text-[#7AC74C]");
+          typeElement.classList.add("bg-[#7AC74C]");
           break;
         case "normal":
-          typeElement.classList.add("text-[#A8A77A]");
+          typeElement.classList.add("bg-[#A8A77A]");
           break;
         case "water":
-          typeElement.classList.add("text-[#6390F0]");
+          typeElement.classList.add("bg-[#6390F0]");
           break;
         case "fire":
-          typeElement.classList.add("text-[#EE8130]");
+          typeElement.classList.add("bg-[#EE8130]");
           break;
         case "electric":
-          typeElement.classList.add("text-[#F7D02C]");
+          typeElement.classList.add("bg-[#F7D02C]");
           break;
         case "ice":
-          typeElement.classList.add("text-[#96D9D6]");
+          typeElement.classList.add("bg-[#96D9D6]");
           break;
         case "fighting":
-          typeElement.classList.add("text-[#C22E28]");
+          typeElement.classList.add("bg-[#C22E28]");
           break;
         case "poison":
-          typeElement.classList.add("text-[#A33EA1]");
+          typeElement.classList.add("bg-[#A33EA1]");
           break;
         case "ground":
-          typeElement.classList.add("text-[#E2BF65]");
+          typeElement.classList.add("bg-[#E2BF65]");
           break;
         case "flying":
-          typeElement.classList.add("text-[#A98FF3]");
+          typeElement.classList.add("bg-[#A98FF3]");
           break;
         case "psychic":
-          typeElement.classList.add("text-[#F95587]");
+          typeElement.classList.add("bg-[#F95587]");
           break;
         case "bug":
-          typeElement.classList.add("text-[#A6B91A]");
+          typeElement.classList.add("bg-[#A6B91A]");
           break;
         case "rock":
-          typeElement.classList.add("text-[#B6A136]");
+          typeElement.classList.add("bg-[#B6A136]");
           break;
         case "ghost":
-          typeElement.classList.add("text-[#735797]");
+          typeElement.classList.add("bg-[#735797]");
           break;
         case "dragon":
-          typeElement.classList.add("text-[#6F35FC]");
+          typeElement.classList.add("bg-[#6F35FC]");
           break;
         case "dark":
-          typeElement.classList.add("text-[#705746]");
+          typeElement.classList.add("bg-[#705746]");
           break;
         case "steel":
-          typeElement.classList.add("text-[#B7B7CE]");
+          typeElement.classList.add("bg-[#B7B7CE]");
           break;
         case "fairy":
-          typeElement.classList.add("text-[#D685AD]");
+          typeElement.classList.add("bg-[#D685AD]");
           break;
         default:
           // Default text color if type is not recognized
-          typeElement.classList.add("text-black");
+          typeElement.classList.add("bg-black");
           break;
       }
       if (index < pokemon.pokemon_type.length - 1) {
@@ -506,6 +663,8 @@ const TeamBuilder = () => {
         typingElement.appendChild(typeElement);
       }
     });
+
+    typingElement.classList.add("flex", "flex-col", "gap-1");
 
     // Append the details to the div
     detailsDiv.append(nameElement, typingElement);
@@ -556,48 +715,53 @@ const TeamBuilder = () => {
       <article className="team-planner">
         <div className="head">
           <header className="head__header">
-            <h1 className="head__heading">
-              <img
-                alt={gameSlug}
-                src={`${IMG_PATH}game/${gameSlug}.png`}
-                className=" mx-auto max-w-full max-h-full transform scale-130"
-              />
+            <h1 className="flex flex-col justify-center items-center head__heading p-4">
               <a href="../">
-                <span className="head__game-name">Pokémon</span> Team Planner
+                <span className="head__game-name text-xl">
+                  Pokémon Team Planner
+                </span>
+                <img
+                  alt={gameSlug}
+                  src={`${IMG_PATH}game/${gameSlug}.png`}
+                  className="mx-auto max-w-full max-h-full transform scale-100"
+                />
               </a>
             </h1>
-            <p>
-              Use this tool to plan your team for an in-game run. Click on a
-              Pokémon below to add it to your team, and click on it again to
-              remove it. Have fun and share with your friends and neighbors!
+            <p className="flex justify-center items-center p-4 mr-12 ml-12 border border-gray-300 rounded">
+              Build your team! Click on a Pokémon to add it to your team, or
+              click on its name to learn more about it. Click the pokemon again
+              on the team to remove it and see the analysis of your team's
+              strengths and weaknesses below by clicking the "Show Team
+              Analysis" button.
             </p>
           </header>
         </div>
         <div className="head__team">
-          <section className="team">
-            <h2 className="team__heading">Your Team</h2>
-            <ul className="flex justify-center items-center gap-2 team__slots">
+          <section className="flex flex-col justify-center items-center team">
+            <h2 className="team__heading text-xl mt-8 mb-4">Your Team</h2>
+            <ul className="flex flex-wrap justify-center items-center gap-2 team__slots">
               {/* Generate team slots */}
               {[...Array(6)].map((_, index) => (
                 <li
                   key={index}
-                  className="slot slot_empty team__slot" // Add the "slot" class here
+                  className="slot slot_empty team__slot p-2"
                   data-slug=""
                   data-type=""
                   data-tera=""
                   onClick={clearTeamSlot}
                   onMouseEnter={(event) => {
-                    event.target.classList.add(
-                      "animate-shake",
-                      "animate-infinite"
-                    );
+                    const liNode =
+                      event.target.parentNode.parentNode.parentNode;
+                    const classNames = liNode.className;
+                    console.log(event.target);
+                    // Check if the class name contains "slot_empty"
+                    if (!classNames.includes("slot_empty")) {
+                      console.log("in here");
+                      event.target.classList.add("animate-shake");
+                    }
                   }}
                   onMouseLeave={(event) => {
-                    event.target.classList.remove(
-                      "animate-shake",
-                      "animate-infinite"
-                    );
-                    console.log("left");
+                    event.target.classList.remove("animate-shake");
                   }}
                 >
                   <div className="slot__remove-button slot__bg-type-1">
@@ -609,12 +773,12 @@ const TeamBuilder = () => {
                       />
                     </figure>
                   </div>
-                  <div className="slot__info bg-emerald-500">
-                    <div className="slot__name-container">
+                  <div className="slot__info bg-emerald-500 border border-black rounded">
+                    <div className="flex justify-center items-center slot__name-container">
                       <span className="slot__name">{UNKNOWN_NAME}</span>
                       <span className="slot__form slot__form_none"></span>
                     </div>
-                    <ol className="slot__type-container">
+                    <ol className="flex justify-center items-center slot__type-container gap-1 p-1">
                       <li className="slot__type"></li>
                       <li className="slot__type"></li>
                     </ol>
@@ -637,7 +801,7 @@ const TeamBuilder = () => {
             </div>
             <div className="team__buttons">
               <button
-                className="team__button"
+                className="team__button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-4"
                 onClick={() =>
                   analyzeTeam(
                     document.querySelector(".team__type-analysis"),
