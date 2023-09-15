@@ -7,16 +7,26 @@ import dexData from "./data/pokedexes.jsx";
 // import Toast from "./Toast.jsx";
 import "../styles.css";
 
-const getScriptParent = () => {
-  const src = import.meta.url;
-  return src.substring(0, src.lastIndexOf("/") + 1);
-};
+// const getScriptParent = () => {
+//   const src = import.meta.url;
+//   return src.substring(0, src.lastIndexOf("/") + 1);
+// };
 
-const JS_PATH = getScriptParent();
-const IMG_PATH = JS_PATH + "assets/";
-const BASE_IMG = IMG_PATH + "pokemon/";
-const UNKNOWN_IMG = IMG_PATH + "type_unknown.png";
-const SE_IMG = IMG_PATH + "SE.png";
+function getImageUrl(dir, name) {
+  if (name === "type_unknown") {
+    return new URL(`./assets/type_unknown.png`, import.meta.url).href;
+  } else if (name === "SE") {
+    return new URL(`./assets/SE.png`, import.meta.url).href;
+  } else {
+    return new URL(`./assets/${dir}/${name}.png`, import.meta.url).href;
+  }
+}
+
+// const JS_PATH = getScriptParent();
+// const IMG_PATH = JS_PATH + "assets/";
+// const BASE_IMG = IMG_PATH + "pokemon/";
+// const UNKNOWN_IMG = IMG_PATH + "type_unknown.png";
+// const SE_IMG = IMG_PATH + "SE.png";
 const UNKNOWN_NAME = "???";
 
 const TeamBuilder = () => {
@@ -177,14 +187,15 @@ const TeamBuilder = () => {
         className={`tally tally_${type} flex flex-col justify-center items-center`}
       >
         <span className="tally__type-symbol" title={type}>
-          <img
-            src={IMG_PATH + "type/" + type + ".png"}
-            alt={capitalize(type)}
-          />
+          <img src={getImageUrl("type", type)} alt={capitalize(type)} />
         </span>
         <ol className="tally__marks">
           <li className="tally__mark flex flex-col justify-center items-center">
-            <img className="scale-75" src={SE_IMG} alt="It's Super Effective" />
+            <img
+              className="scale-75"
+              src={getImageUrl("", "SE")}
+              alt="It's Super Effective"
+            />
             <span className="super_effective_count">0</span>
           </li>
         </ol>
@@ -325,7 +336,7 @@ const TeamBuilder = () => {
 
     const img = slot.querySelector(".slot__pokemon-render");
     img.classList.remove("slot__pokemon-render_gmax");
-    img.setAttribute("src", UNKNOWN_IMG);
+    img.setAttribute("src", getImageUrl("", "type_unknown"));
     img.setAttribute("alt", "");
 
     slot.querySelector(".slot__name").innerHTML = "???";
@@ -350,16 +361,25 @@ const TeamBuilder = () => {
   };
 
   const getPokemonRenderUrl = (pokemon, gmax = false) => {
-    return (
-      BASE_IMG +
+    return getImageUrl(
+      "pokemon",
       [
         String(pokemon.base_id).padStart(4, "0"),
         String(pokemon.form_id).padStart(3, "0"),
         gmax && pokemon.gender.length > 1 ? "mf" : pokemon.gender[0],
         gmax ? "g" : "n",
-      ].join("_") +
-      ".png"
+      ].join("_")
     );
+    // return (
+    //   BASE_IMG +
+    //   [
+    //     String(pokemon.base_id).padStart(4, "0"),
+    //     String(pokemon.form_id).padStart(3, "0"),
+    //     gmax && pokemon.gender.length > 1 ? "mf" : pokemon.gender[0],
+    //     gmax ? "g" : "n",
+    //   ].join("_") +
+    //   ".png"
+    // );
   };
 
   const populateTeamSlot = (event_or_slug) => {
@@ -724,7 +744,7 @@ const TeamBuilder = () => {
                 </span>
                 <img
                   alt={gameSlug}
-                  src={`${IMG_PATH}game/${gameSlug}.png`}
+                  src={getImageUrl("game", gameSlug)}
                   className="mx-auto max-w-full max-h-full transform scale-100"
                 />
               </a>
@@ -768,7 +788,7 @@ const TeamBuilder = () => {
                     <figure className="slot__bg-type-2">
                       <img
                         className="slot__pokemon-render"
-                        src={UNKNOWN_IMG}
+                        src={getImageUrl("", "type_unknown")}
                         alt=""
                       />
                     </figure>
