@@ -7,11 +7,6 @@ import dexData from "./data/pokedexes.jsx";
 // import Toast from "./Toast.jsx";
 import "../styles.css";
 
-// const getScriptParent = () => {
-//   const src = import.meta.url;
-//   return src.substring(0, src.lastIndexOf("/") + 1);
-// };
-
 function getImageUrl(dir, name) {
   if (name === "type_unknown") {
     return new URL(`./assets/type_unknown.png`, import.meta.url).href;
@@ -22,11 +17,6 @@ function getImageUrl(dir, name) {
   }
 }
 
-// const JS_PATH = getScriptParent();
-// const IMG_PATH = JS_PATH + "assets/";
-// const BASE_IMG = IMG_PATH + "pokemon/";
-// const UNKNOWN_IMG = IMG_PATH + "type_unknown.png";
-// const SE_IMG = IMG_PATH + "SE.png";
 const UNKNOWN_NAME = "???";
 
 const TeamBuilder = () => {
@@ -370,16 +360,6 @@ const TeamBuilder = () => {
         gmax ? "g" : "n",
       ].join("_")
     );
-    // return (
-    //   BASE_IMG +
-    //   [
-    //     String(pokemon.base_id).padStart(4, "0"),
-    //     String(pokemon.form_id).padStart(3, "0"),
-    //     gmax && pokemon.gender.length > 1 ? "mf" : pokemon.gender[0],
-    //     gmax ? "g" : "n",
-    //   ].join("_") +
-    //   ".png"
-    // );
   };
 
   const populateTeamSlot = (event_or_slug) => {
@@ -438,7 +418,6 @@ const TeamBuilder = () => {
     }
 
     span = slot.querySelectorAll(".slot__type");
-    // span.classList.add("rounded", "border", "border-black", "px-0.5");
     span.forEach((span, i) => {
       switch (type[i]) {
         case "grass":
@@ -496,7 +475,6 @@ const TeamBuilder = () => {
           span.classList.add("bg-[#D685AD]");
           break;
         default:
-          // Default text color if type is not recognized
           break;
       }
       span.classList.add("slot__type_" + type[i]);
