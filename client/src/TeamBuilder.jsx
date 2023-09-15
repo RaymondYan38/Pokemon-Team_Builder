@@ -4,7 +4,7 @@ import gameData from "./data/games.jsx";
 import typeData from "./data/types.jsx";
 import pokemonData from "./data/pokemon.jsx";
 import dexData from "./data/pokedexes.jsx";
-import versionData from "./data/versions.jsx";
+// import Toast from "./Toast.jsx";
 import "../styles.css";
 
 const getScriptParent = () => {
@@ -15,8 +15,8 @@ const getScriptParent = () => {
 const JS_PATH = getScriptParent();
 const IMG_PATH = JS_PATH + "assets/";
 const BASE_IMG = IMG_PATH + "pokemon/";
-const SV_BASE_IMG = IMG_PATH + "sv-pokemon/";
 const UNKNOWN_IMG = IMG_PATH + "type_unknown.png";
+const SE_IMG = IMG_PATH + "SE.png";
 const UNKNOWN_NAME = "???";
 
 const TeamBuilder = () => {
@@ -26,6 +26,14 @@ const TeamBuilder = () => {
     : providedGameSlug;
 
   const [hashSlugs, setHashSlugs] = useState([]);
+  // const [showToast, setShowToast] = useState(false);
+  // const [toastMessage, setToastMessage] = useState("");
+
+  // Function to show the toast with a message
+  // const showToastMessage = (message) => {
+  //   setToastMessage(message);
+  //   setShowToast(true);
+  // };
 
   useEffect(() => {
     // Helper function to parse the URL and set state variables
@@ -41,6 +49,14 @@ const TeamBuilder = () => {
     populateDexes();
     // Parse the URL and attach scroll listener on component mount
     parseUrl();
+
+    // if (showToast) {
+    //   const timer = setTimeout(() => {
+    //     setShowToast(false);
+    //   }, 3000); // Hide after 3 seconds (adjust as needed)
+    //   // Cleanup the timer when the component unmounts or when showToast becomes false
+    //   return () => clearTimeout(timer);
+    // }
   }, []);
 
   const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
@@ -156,16 +172,21 @@ const TeamBuilder = () => {
 
   const tallies = Object.keys(typeData2).map((type) => {
     return (
-      <li key={type} className={`tally tally_${type}`}>
+      <li
+        key={type}
+        className={`tally tally_${type} flex flex-col justify-center items-center`}
+      >
         <span className="tally__type-symbol" title={type}>
-          {capitalize(type)}
+          <img
+            src={IMG_PATH + "type/" + type + ".png"}
+            alt={capitalize(type)}
+          />
         </span>
         <ol className="tally__marks">
-          {[...Array(6)].map((_, index) => (
-            <li key={index} className="tally__mark" data-slug="">
-              0
-            </li>
-          ))}
+          <li className="tally__mark flex flex-col justify-center items-center">
+            <img className="scale-75" src={SE_IMG} alt="It's Super Effective" />
+            <span className="super_effective_count">0</span>
+          </li>
         </ol>
       </li>
     );
@@ -248,58 +269,17 @@ const TeamBuilder = () => {
           coveragePokemon.push(slugs[i]);
         }
       }
-      // console.log(type);
-      // console.log(weakPokemon);
-      // console.log(resistPokemon);
-      // console.log(coveragePokemon);
-      const defCount = resistPokemon.length - weakPokemon.length;
-      const atkCount = coveragePokemon.length;
       const selector = ".tally_" + type;
-      if (defCount < 0) {
-        defTallies.querySelector(selector).classList.add("tally_warning");
-      } else {
-        defTallies.querySelector(selector).classList.remove("tally_warning");
-      }
-      if (defCount + atkCount < 0) {
-        atkTallies.querySelector(selector).classList.add("tally_warning");
-      } else {
-        atkTallies.querySelector(selector).classList.remove("tally_warning");
-      }
-      // console.log(resistPokemon.length);
-      // console.log(weakPokemon.length);
-      // console.log(coveragePokemon.length);
-
       defTallies
-        .querySelectorAll(selector + " .tally__mark")
+        .querySelectorAll(selector + " .super_effective_count")
         .forEach((element) => {
-          console.log(selector + " .tally__mark");
-          console.log(element);
-          element.setAttribute("class", "tally__mark");
-          if (weakPokemon.length > 0) {
-            element.dataset.slug = weakPokemon.shift();
-            element.classList.add("tally__mark_negative");
-            element.innerHTML = -1;
-          } else if (resistPokemon.length > 0) {
-            element.dataset.slug = resistPokemon.shift();
-            element.classList.add("tally__mark_positive");
-            element.innerHTML = 1;
-          } else {
-            element.dataset.slug = "";
-            element.innerHTML = 0;
-          }
+          element.textContent = weakPokemon.length;
         });
+
       atkTallies
-        .querySelectorAll(selector + " .tally__mark")
+        .querySelectorAll(selector + " .super_effective_count")
         .forEach((element) => {
-          element.setAttribute("class", "tally__mark");
-          if (coveragePokemon.length > 0) {
-            element.dataset.slug = coveragePokemon.shift();
-            element.classList.add("tally__mark_positive");
-            element.innerHTML = 1;
-          } else {
-            element.dataset.slug = "";
-            element.innerHTML = 0;
-          }
+          element.textContent = coveragePokemon.length;
         });
     });
   };
@@ -317,6 +297,8 @@ const TeamBuilder = () => {
     if (slug === "") return;
     const type = slot.dataset.type.split(",");
     const tera = slot.dataset.tera;
+
+    // showToastMessage(`${slug} removed successfully!`);
 
     // Empty data
     slot.classList.add("slot_empty");
@@ -511,7 +493,7 @@ const TeamBuilder = () => {
       li.classList.add("pokedex-entry_picked");
       toggleEmptyDex();
     }
-
+    // showToastMessage(`${slug} added successfully!`);
     updateTeamAnalysis();
     updateTeamHash();
   };
@@ -535,7 +517,7 @@ const TeamBuilder = () => {
       "p-8"
     );
     const game = gameData[gameSlug];
-    game.dex_slugs.forEach((slug, i) => {
+    game.dex_slugs.forEach((slug) => {
       let li = document.createElement("li");
       let heading = document.createElement("h3");
       let pokedex = document.createElement("ol");
@@ -759,7 +741,7 @@ const TeamBuilder = () => {
         <div className="head__team">
           <section className="flex flex-col justify-center items-center team">
             <h2 className="team__heading text-xl mt-8 mb-4">Your Team</h2>
-            <ul className="flex flex-wrap justify-center items-center gap-2 team__slots">
+            <ul className="team__list flex flex-wrap justify-center items-center gap-2 team__slots">
               {/* Generate team slots */}
               {[...Array(6)].map((_, index) => (
                 <li
@@ -808,11 +790,11 @@ const TeamBuilder = () => {
               ))}
             </ul>
             <div className="team__type-analysis type-analysis_hidden hidden flex flex-col gap-4 justify-stretch items-center bg-white border border-gray-300 rounded p-4">
-              <h3 className="type-analysis__heading">Team Defense</h3>
+              <h3 className="type-analysis__heading text-xl">Team Defense</h3>
               <ol className="grid gap-4 grid-cols-6 justify-evenly list-none m-0 p-0 type-analysis__grid type-analysis__grid_defense">
                 {tallies}
               </ol>
-              <h3 className="type-analysis__heading">Team Offense</h3>
+              <h3 className="type-analysis__heading text-xl">Team Offense</h3>
               <ol className="grid gap-4 grid-cols-6 justify-evenly list-none m-0 p-0 type-analysis__grid type-analysis__grid_attack">
                 {tallies}
               </ol>
@@ -832,6 +814,7 @@ const TeamBuilder = () => {
             </div>
           </section>
         </div>
+        {/* <Toast message={toastMessage} showToast={showToast} /> */}
       </article>
     </div>
   );
