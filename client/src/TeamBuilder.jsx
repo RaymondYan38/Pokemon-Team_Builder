@@ -11,7 +11,7 @@ function getImageUrl(dir, name) {
   if (name === "type_unknown") {
     return new URL(`./assets/type_unknown.png`, import.meta.url).href;
   } else if (name === "SE") {
-    return new URL(`./assets/SE.png`, import.meta.url).href;
+    return new URL(`./assets/se.png`, import.meta.url).href;
   } else {
     return new URL(`./assets/${dir}/${name}.png`, import.meta.url).href;
   }
@@ -299,8 +299,6 @@ const TeamBuilder = () => {
     const type = slot.dataset.type.split(",");
     const tera = slot.dataset.tera;
 
-    // showToastMessage(`${slug} removed successfully!`);
-
     // Empty data
     slot.classList.add("slot_empty");
     slot.classList.remove("slot_populated");
@@ -348,6 +346,7 @@ const TeamBuilder = () => {
 
     updateTeamAnalysis();
     updateTeamHash();
+    // showToastMessage(`${slug} removed successfully!`);
   };
 
   const getPokemonRenderUrl = (pokemon, gmax = false) => {
@@ -491,9 +490,9 @@ const TeamBuilder = () => {
       li.classList.add("pokedex-entry_picked");
       toggleEmptyDex();
     }
-    // showToastMessage(`${slug} added successfully!`);
     updateTeamAnalysis();
     updateTeamHash();
+    // showToastMessage(`${slug} added successfully!`);
   };
 
   const populateDexes = () => {
