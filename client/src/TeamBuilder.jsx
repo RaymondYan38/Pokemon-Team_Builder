@@ -284,6 +284,8 @@ const TeamBuilder = () => {
         .forEach((element) => {
           if (weakPokemon.length > 0) {
             element.classList.add("text-red-500", "font-bold");
+          } else {
+            element.classList.remove("text-red-500", "font-bold");
           }
           element.textContent = weakPokemon.length;
         });
@@ -293,6 +295,8 @@ const TeamBuilder = () => {
         .forEach((element) => {
           if (coveragePokemon.length > 0) {
             element.classList.add("text-green-500", "font-bold");
+          } else {
+            element.classList.remove("text-green-500", "font-bold");
           }
           element.textContent = coveragePokemon.length;
         });
