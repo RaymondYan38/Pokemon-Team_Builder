@@ -29,11 +29,20 @@ const TeamBuilder = () => {
   // const [showToast, setShowToast] = useState(false);
   // const [toastMessage, setToastMessage] = useState("");
 
-  // Function to show the toast with a message
+  // // Function to show the toast with a message
   // const showToastMessage = (message) => {
   //   setToastMessage(message);
   //   setShowToast(true);
+  //   setTimeout(() => {
+  //     setShowToast(false);
+  //   }, 3000);
   // };
+
+  // if (showToast) {
+  //   const timer = setTimeout(() => {
+  //     setShowToast(false);
+  //   }, 3000);
+  // }
 
   useEffect(() => {
     // Helper function to parse the URL and set state variables
@@ -47,7 +56,6 @@ const TeamBuilder = () => {
       }
     };
     populateDexes();
-    // Parse the URL and attach scroll listener on component mount
     parseUrl();
 
     // if (showToast) {
@@ -274,12 +282,18 @@ const TeamBuilder = () => {
       defTallies
         .querySelectorAll(selector + " .super_effective_count")
         .forEach((element) => {
+          if (weakPokemon.length > 0) {
+            element.classList.add("text-red-500", "font-bold");
+          }
           element.textContent = weakPokemon.length;
         });
 
       atkTallies
         .querySelectorAll(selector + " .super_effective_count")
         .forEach((element) => {
+          if (coveragePokemon.length > 0) {
+            element.classList.add("text-green-500", "font-bold");
+          }
           element.textContent = coveragePokemon.length;
         });
     });
@@ -292,12 +306,13 @@ const TeamBuilder = () => {
         ? document.querySelector(".slot[data-slug='" + slug + "']")
         : event_or_slug.currentTarget;
     // event_or_slug.currentTarget.parentNode;
-
+    // console.log(slot);
     const slug = slot.dataset.slug;
 
     if (slug === "") return;
     const type = slot.dataset.type.split(",");
     const tera = slot.dataset.tera;
+    // showToastMessage(`${slug} removed successfully!`);
 
     // Empty data
     slot.classList.add("slot_empty");
@@ -346,7 +361,6 @@ const TeamBuilder = () => {
 
     updateTeamAnalysis();
     updateTeamHash();
-    // showToastMessage(`${slug} removed successfully!`);
   };
 
   const getPokemonRenderUrl = (pokemon, gmax = false) => {
@@ -371,7 +385,7 @@ const TeamBuilder = () => {
     if (!(slug in pokemonData)) {
       return;
     }
-
+    // console.log(slug);
     // Validate Pokémon is not duplicated
     const slugs = Array.from(document.querySelectorAll(".slot_populated")).map(
       (li) => li.dataset.slug
@@ -379,6 +393,7 @@ const TeamBuilder = () => {
     if (slugs.includes(slug)) {
       return;
     }
+    // showToastMessage(`${slug} added successfully!`);
 
     const slot = document.querySelector(".slot_empty");
     var gmax = slug.endsWith("-gmax");
@@ -490,9 +505,9 @@ const TeamBuilder = () => {
       li.classList.add("pokedex-entry_picked");
       toggleEmptyDex();
     }
+
     updateTeamAnalysis();
     updateTeamHash();
-    // showToastMessage(`${slug} added successfully!`);
   };
 
   const populateDexes = () => {
